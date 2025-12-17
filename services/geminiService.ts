@@ -1,9 +1,9 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { EncouragementResponse } from "../types";
 
-const apiKey = process.env.API_KEY || '';
-// Initialize conditionally to avoid errors if key is missing (handled in functions)
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
+// Initialize the AI client directly with process.env.API_KEY as per guidelines.
+// We assume process.env.API_KEY is available and valid.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 // Circuit Breaker State
 // If the API fails multiple times, we stop calling it to prevent cost overruns or console noise.
@@ -40,8 +40,8 @@ const handleApiError = (error: unknown) => {
 };
 
 export const getEncouragement = async (score: number): Promise<string> => {
-  // 1. Safety Check: Missing Key or Circuit Broken
-  if (!apiKey || !ai || isOfflineMode) {
+  // 1. Safety Check: Circuit Broken or Offline
+  if (isOfflineMode) {
     return FALLBACK_MESSAGES[Math.floor(Math.random() * FALLBACK_MESSAGES.length)];
   }
 
@@ -79,7 +79,7 @@ export const getEncouragement = async (score: number): Promise<string> => {
 
 export const getWelcomeMessage = async (): Promise<string> => {
   // 1. Safety Check
-  if (!apiKey || !ai || isOfflineMode) return FALLBACK_WELCOME;
+  if (isOfflineMode) return FALLBACK_WELCOME;
 
   try {
     const response = await ai.models.generateContent({
